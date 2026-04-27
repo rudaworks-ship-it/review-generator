@@ -3,20 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>리뷰 원고 자동 작성 시스템</title>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --primary: #03c75a; --bg: #f8f9fa; --text: #333; }
         body { font-family: 'Pretendard', -apple-system, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text); }
         .app-card { width: 100%; max-width: 480px; background: #fff; padding: 40px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary); letter-spacing: -0.5px; margin: 0; }
+        .header h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary); margin: 0; }
         .header p { font-size: 0.9rem; color: #888; margin-top: 8px; }
         .input-group { margin-bottom: 18px; }
-        label { display: block; font-size: 0.85rem; font-weight: 700; color: #444; margin-bottom: 8px; margin-left: 4px; }
-        input, select { width: 100%; padding: 12px 16px; border: 1px solid #e1e4e8; border-radius: 12px; font-size: 0.95rem; box-sizing: border-box; transition: all 0.2s; background: #fff; }
-        input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.1); }
-        .btn-generate { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 1.05rem; font-weight: 700; cursor: pointer; margin-top: 15px; transition: transform 0.1s; }
-        .btn-generate:active { transform: scale(0.98); }
-        #status-area { margin-top: 20px; text-align: center; font-size: 0.9rem; color: #666; min-height: 20px; font-weight: 500; }
+        label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; }
+        input, select, textarea { width: 100%; padding: 12px 16px; border: 1px solid #e1e4e8; border-radius: 12px; font-size: 0.95rem; box-sizing: border-box; }
+        textarea { height: 120px; resize: none; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(3, 199, 90, 0.1); }
+        .range-group { display: flex; gap: 10px; align-items: center; }
+        .range-group input { flex: 1; text-align: center; }
+        .btn-generate { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 1.05rem; font-weight: 700; cursor: pointer; margin-top: 15px; }
+        #status-area { margin-top: 20px; text-align: center; font-size: 0.9rem; color: #666; min-height: 20px; }
     </style>
 </head>
 <body>
@@ -24,26 +27,49 @@
 <div class="app-card">
     <div class="header">
         <h1>Review</h1>
-        <p>리뷰자동 생성기</p>
+        <p>리뷰자동 생성기 (Excel Ver.)</p>
     </div>
     
     <div class="input-group">
-        <label>비즈니스 카테고리</label>
-        <select id="bizType">
-            <option value="병원">🏥 메디컬 (피부과/성형외과)</option>
-            <option value="헤어샵">💇 뷰티 (헤어/에스테틱)</option>
-            <option value="맛집">🍕 다이닝 (식당/카페)</option>
+        <label>비즈니스 카테고리 (업체 선택)</label>
+        <select id="bizType" onchange="updateGuideByCompany()">
+            <option value="경포동해횟집">🐟 경포동해횟집</option>
+            <option value="고옥">🍚 고옥</option>
+            <option value="라움산부인과">🏥 라움산부인과의원</option>
+            <option value="맛깔참죽 완도미역 덕이점">🥣 맛깔참죽 완도미역 덕이점</option>
+            <option value="맛깔참죽&완도미역 용인힐스테이트몬테로이점">🥣 맛깔참죽&완도미역 용인힐스테이트몬테로이점</option>
+            <option value="맛깔참죽 완도미역 대전 문화점">🥣 맛깔참죽 완도미역 대전 문화점</option>
+            <option value="예지인피부과의원">✨ 예지인피부과의원</option>
+            <option value="메디포맨">🩺 메디포맨비뇨의학과의원 부산</option>
+            <option value="모나드">💇 모나드두피탈모센터 부산서면역</option>
+            <option value="박근석명품대게직판장">🦀 박근석명품대게직판장</option>
+            <option value="서울패미리치과">🦷 서울패미리치과의원</option>
+            <option value="세브란스치과">🦷 세브란스치과의원</option>
+            <option value="인본병원">🏥 인본병원 부천</option>
+            <option value="일신365치과">🦷 일신365치과병원</option>
+            <option value="청담한의원">🌿 청담한의원</option>
+            <option value="푸른솔한의원">🌿 푸른솔한의원</option>
+            <option value="힐동물병원">🐾 힐동물병원</option>
         </select>
     </div>
     
     <div class="input-group">
-        <label>상품 및 메뉴 정보 (쉼표로 구분)</label>
-        <input type="text" id="itemNames" placeholder="예: 울세라 시술, 리쥬란 힐러, 고기 세트">
+        <label>상품 및 강조 키워드</label>
+        <input type="text" id="itemNames" placeholder="예: 대게찜, 임플란트 / 친절함, 수율">
     </div>
-    
+
     <div class="input-group">
-        <label>강조 핵심 키워드 (쉼표로 구분)</label>
-        <input type="text" id="keywords" placeholder="예: 섬세한 상담, 깔끔한 시설, 인생 맛집">
+        <label>📏 희망 글자 수 범위 (최소 ~ 최대)</label>
+        <div class="range-group">
+            <input type="number" id="minLen" value="90" placeholder="최소">
+            <span>~</span>
+            <input type="number" id="maxLen" value="150" placeholder="최대">
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label>🔥 리뷰 작성 가이드</label>
+        <textarea id="guide" placeholder="내용 비중(예: 대게 20%, 서비스 80%)을 적어주시면 반영됩니다."></textarea>
     </div>
     
     <div class="input-group">
@@ -51,100 +77,110 @@
         <input type="number" id="count" value="10">
     </div>
     
-    <button class="btn-generate" onclick="generateReviews()">맞춤 원고 작성 시작</button>
+    <button class="btn-generate" onclick="generateReviews()">맞춤 엑셀 원고 생성 시작</button>
     <div id="status-area">준비됨</div>
 </div>
 
 <script>
-    async function generateReviews() {
-        const bizType = document.getElementById('bizType').value;
-        const itemsInput = document.getElementById('itemNames').value;
-        const keysInput = document.getElementById('keywords').value;
-        const total = parseInt(document.getElementById('count').value) || 10;
-        const statusArea = document.getElementById('status-area');
+const companyData = {
+    "경포동해횟집": "자연산 회, 신선함, 스끼다시 푸짐, 바다 조망 강조",
+    "고옥": "장어덮밥, 깊은 맛, 정갈한 상차림, 웨이팅 맛집",
+    "라움산부인과": "여성전문의, 섬세한 진료, 편안한 분위기, 상세한 설명",
+    "맛깔참죽 완도미역 덕이점": "MSG 무첨가, 신선한 완도 미역, 정성 가득한 죽, 깔끔한 반찬 구성",
+    "맛깔참죽&완도미역 용인힐스테이트몬테로이점": "건강한 재료, 깊은 맛의 미역국, 아이들도 잘 먹는 메뉴, 친절한 서비스",
+    "맛깔참죽 완도미역 대전 문화점": "정갈한 한 끼, 든든한 보양죽, 신선한 식재료 사용, 포장 및 배달 깔끔함",
+    "예지인피부과의원": "꼼꼼한 피부 진단, 맞춤 시술 제안, 과잉 진료 없음, 편안하고 깔끔한 시설",
+    "메디포맨": "남성전문의, 프라이버시 보호, 꼼꼼한 상담, 정직한 진단",
+    "모나드": "두피 정밀 검사, 맞춤 관리, 탈모 고민 해결, 체계적 시스템",
+    "박근석명품대게직판장": "대게 수율, 합리적 가격, 손질 완료, 먹기 편함, 신선한 맛 강조",
+    "서울패미리치과": "무통 치료, 합리적 비용, 과잉진료 없음, 원장님 실력",
+    "세브란스치과": "대학병원급 시설, 사후 관리 철저, 임플란트 전문",
+    "인본병원": "관절 척추 전문, 재활 시스템, 시설 깨끗함",
+    "일신365치과": "365일 진료, 야간 진료, 주말 방문 가능",
+    "청담한의원": "체질 진단, 통증 치료 효과, 한약 상담 신뢰",
+    "푸른솔한의원": "침 치료 후 개운함, 차분한 인테리어, 정성스러운 진료",
+    "힐동물병원": "가족 같은 진료, 명확한 설명, 과잉 검사 없음"
+};
 
-        if(!itemsInput || !keysInput) return alert("필수 정보를 입력해주세요.");
+window.onload = updateGuideByCompany;
 
-        const itemList = itemsInput.split(',').map(s => s.trim());
-        const keyList = keysInput.split(',').map(s => s.trim());
-        const API_KEY = "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";
-        
-        let finalResults = [];
+function updateGuideByCompany() {
+    const bizType = document.getElementById('bizType').value;
+    document.getElementById('guide').value = companyData[bizType] || "";
+}
 
-        const startPhrases = {
-            "병원": ["피부 고민 때문에 왔어요.", "원장님 상담이 꼼꼼해요.", "시설이 깨끗하네요.", "지인 추천 만족해요.", "친절하셔서 기분 좋네요."],
-            "헤어샵": ["머리 스타일 맘에 들어요.", "디자이너분 손이 빠르네요.", "분위기도 좋고 친절해요.", "커트 맛집이네요."],
-            "맛집": ["음식 맛이 일품이에요.", "매장이 쾌적해서 좋네요.", "재료가 정말 신선해요.", "분위기 좋고 친절합니다."]
-        };
+async function generateReviews() {
+    const bizType = document.getElementById('bizType').value;
+    const itemsInput = document.getElementById('itemNames').value;
+    const guideInput = document.getElementById('guide').value;
+    const total = parseInt(document.getElementById('count').value) || 10;
+    const minLen = document.getElementById('minLen').value || 90;
+    const maxLen = document.getElementById('maxLen').value || 150;
+    const statusArea = document.getElementById('status-area');
+    const API_KEY = "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";
 
-        const emojis = ["👍", "😊", "✨", "😍", "🙌"];
+    let excelData = [["No", "Review"]]; 
+    const emojis = ["👍", "😊", "✨", "✅", "🙌", "🤍", "🔥"];
+    const suffixes = ["!", "~!", "~", "~~", "."];
 
-        for (let i = 1; i <= total; i++) {
-            statusArea.innerText = `✍️ ${i}번째 원고를 구성하고 있습니다...`;
-            
-            const selectedItem = itemList[Math.floor(Math.random() * itemList.length)];
-            const selectedKey = keyList[Math.floor(Math.random() * keyList.length)];
-            const currentStarts = startPhrases[bizType] || startPhrases["맛집"];
-            const selectedStart = currentStarts[Math.floor(Math.random() * currentStarts.length)];
-            const addEmoji = (i % 2 === 0) ? emojis[Math.floor(Math.random() * emojis.length)] : "";
+    for (let i = 1; i <= total; i++) {
+        statusArea.innerText = `✍️ ${i}/${total} 작성 중...`;
 
-            try {
-                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST",
-                    headers: { 
-                        "Authorization": "Bearer " + API_KEY, 
-                        "Content-Type": "application/json" 
-                    },
-                    body: JSON.stringify({
-                        model: "llama-3.3-70b-versatile",
-                        messages: [
-                            {role: "system", content: `너는 실사용자 리뷰어다. 업종: ${bizType}.`},
-                            {role: "user", content: `시작: '${selectedStart}', 대상: '${selectedItem}', 키워드: '${selectedKey}'. 자연스럽게 한두 문장으로 작성하고 마지막에 '${addEmoji}'를 붙여라.`}
-                        ],
-                        temperature: 0.7 
-                    })
-                });
+        const selectedItem = itemsInput ? itemsInput.split(',')[Math.floor(Math.random() * itemsInput.split(',').length)].trim() : "";
+        const showEmoji = (Math.random() < 0.4); 
+        const selectedEmoji = showEmoji ? emojis[Math.floor(Math.random() * emojis.length)] : "";
+        const selectedSuffix = suffixes[Math.floor(Math.random() * suffixes.length)];
 
-                const data = await response.json();
-                
-                if(data.choices && data.choices[0].message && data.choices[0].message.content) {
-                    let content = data.choices[0].message.content.trim()
-                        .replace(/[a-zA-Z]/g, "") 
-                        .replace(/[^가-힣0-9\s.,!~?^👍😊✨🔥😍✔️🙌]/g, "");
-                    
-                    finalResults.push({ id: i, text: content });
-                } else {
-                    finalResults.push({ id: i, text: "데이터 생성 지연 - 재시도 권장" });
-                }
+        try {
+            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: { "Authorization": "Bearer " + API_KEY, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "llama-3.3-70b-versatile",
+                    messages: [
+                        { 
+                            role: "system", 
+                            content: `너는 '${bizType}'를 이용한 실제 고객이다.
+                            [미션]
+                            1. **가이드 준수**: 사용자가 가이드에 '비중(%)'이나 '특정 요청'을 적었다면 이를 최우선으로 반영하라.
+                            2. **도입부 다양화**: 매번 다른 상황(가족 모임, 퇴근 길, 첫 방문 등)으로 글을 시작하라.
+                            3. **문장 연결**: 마침표를 최소화하고 '~해서', '~길래', '~더니'를 사용하여 자연스럽게 이어라.
+                            4. **강제 종료**: 문장을 마침표로 끝내지 말고 반드시 '글자'로만 끝마쳐라. (예: "좋았네요", "추천해요")`
+                        },
+                        { 
+                            role: "user", 
+                            content: `가이드 지시사항: ${guideInput}\n강조 키워드: ${selectedItem}\n분량: 공백 포함 ${minLen}~${maxLen}자\n\n[필수]: 도입부를 뻔하지 않게 매번 다르게 작성하고, 문장은 마침표 없이 끝내줘.` 
+                        }
+                    ],
+                    temperature: 0.9 
+                })
+            });
 
-                await new Promise(res => setTimeout(res, 1200)); 
+            const data = await response.json();
+            let text = data.choices?.[0]?.message?.content || "";
 
-            } catch (e) {
-                console.error(e);
-                finalResults.push({ id: i, text: "네트워크 불안정으로 인한 작성 실패" });
-            }
-        }
+            // 정제 및 기호 강제 결합 로직
+            text = text.replace(/[^가-힣0-9\s.,!~?👍😊✨🙌🤍🔥]/g, "").trim();
+            text = text.replace(/\. /g, "고 "); // 중간 마침표는 연결 어미로 변경
+            text = text.replace(/\.$/, "");   // 마지막 마침표 제거
 
-        if (finalResults.length > 0) {
-            const BOM = "\uFEFF";
-            let csvHeader = "No,Draft Content\n";
-            let csvBody = finalResults.map(r => `${r.id},"${r.text}"`).join("\n");
-            
-            const blob = new Blob([BOM + csvHeader + csvBody], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `Draft_Report_${bizType}.csv`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            statusArea.innerText = `✅ 총 ${finalResults.length}건의 원고 작성이 완료되었습니다.`;
-        } else {
-            statusArea.innerText = "❌ 작성된 내용이 없습니다. 정보를 다시 확인해주세요.";
+            // 설정된 접미사와 이모지를 강제로 결합 (랜덤성 보장)
+            text = text + selectedSuffix + (selectedEmoji ? " " + selectedEmoji : "");
+
+            excelData.push([i, text]);
+            await new Promise(res => setTimeout(res, 800));
+        } catch (e) {
+            excelData.push([i, "생성 오류"]);
         }
     }
-</script>
 
+    const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Reviews");
+    XLSX.writeFile(workbook, `${bizType}_리뷰원고.xlsx`);
+    
+    statusArea.innerText = `✅ 엑셀 다운로드 완료!`;
+}
+</script>
 </body>
-</html>
+</html> 
