@@ -120,7 +120,7 @@ async function generateReviews() {
     const API_KEY = "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";
 
     let excelData = [["No", "Review"]]; 
-    const emojis = ["👍", "😊", "✨", "🙌", "🤍", "🔥"];
+    const emojis = ["👍", "😊", "✨", "✅", "🙌", "🤍", "🔥"];
     const suffixes = ["!", "~!", "~", "~~", "."];
 
     for (let i = 1; i <= total; i++) {
@@ -140,31 +140,36 @@ async function generateReviews() {
                     messages: [
                         { 
                             role: "system", 
-                            content: `너는 '${bizType}'를 이용한 실제 고객이다.
-                            [미션]
-                            1. **가이드 준수**: 사용자가 가이드에 '비중(%)'이나 '특정 요청'을 적었다면 이를 최우선으로 반영하라.
-                            2. **도입부 다양화**: 매번 다른 상황(가족 모임, 퇴근 길, 첫 방문 등)으로 글을 시작하라.
-                            3. **문장 연결**: 마침표를 최소화하고 '~해서', '~길래', '~더니'를 사용하여 자연스럽게 이어라.
-                            4. **강제 종료**: 문장을 마침표로 끝내지 말고 반드시 '글자'로만 끝마쳐라. (예: "좋았네요", "추천해요")`
+                            content: `너는 '${bizType}'를 이용한 실제 동네 주민이다. 
+                            [작성 원칙]
+                            1. **첫 단어 중복 절대 금지**: 모든 리뷰가 업체명(예: ${bizType})이나 '전체적으로' 같은 단어로 시작하지 않게 하라. "친구랑", "오랜만에", "주말에", "근처라", "갑자기" 등 매번 다른 상황으로 시작하라.
+                            2. **구어체 연결**: '~했고', '~있으며' 대신 '~해서 가봤는데', '~길래 가보니', '~하길래' 처럼 실제 말하는 어미를 사용하라.
+                            3. **오타 및 문법**: 정확한 한국어를 사용하여 오타가 없게 하고, 문맥이 매끄러운지 검수하라.
+                            4. **반말 금지**: 친절한 존댓말(~해요, ~네요, ~더라고요)만 사용하라.
+                            5. **가이드 준수**: 사용자의 가이드 내용을 자연스럽게 포함하되, 광고 느낌이 나지 않게 하라.`
                         },
                         { 
                             role: "user", 
-                            content: `가이드 지시사항: ${guideInput}\n강조 키워드: ${selectedItem}\n분량: 공백 포함 ${minLen}~${maxLen}자\n\n[필수]: 도입부를 뻔하지 않게 매번 다르게 작성하고, 문장은 마침표 없이 끝내줘.` 
+                            content: `가이드 지시사항: ${guideInput}\n강조 키워드: ${selectedItem}\n분량: 공백 포함 ${minLen}~${maxLen}자\n\n[필수]: 첫 문장을 절대 업체명으로 시작하지 말고, 아주 일상적인 말투로 마침표 없이 글자로만 마무리해줘.` 
                         }
                     ],
-                    temperature: 0.9 
+                    temperature: 0.95 
                 })
             });
 
             const data = await response.json();
             let text = data.choices?.[0]?.message?.content || "";
 
-            // 정제 및 기호 강제 결합 로직
-            text = text.replace(/[^가-힣0-9\s.,!~?👍😊✨🙌🤍🔥]/g, "").trim();
-            text = text.replace(/\. /g, "고 "); // 중간 마침표는 연결 어미로 변경
-            text = text.replace(/\.$/, "");   // 마지막 마침표 제거
+            text = text.replace(/[^가-힣0-9\s.,!~?👍😊✨✅🙌🤍🔥]/g, "").trim();
+            
+            // 딱딱한 문어체 자동 보정
+            text = text.replace(/있으며 /g, "있고 ");
+            text = text.replace(/했음/g, "해서");
+            text = text.replace(/임 /g, "이고 ");
+            
+            text = text.replace(/\. /g, " "); 
+            text = text.replace(/\.$/, ""); 
 
-            // 설정된 접미사와 이모지를 강제로 결합 (랜덤성 보장)
             text = text + selectedSuffix + (selectedEmoji ? " " + selectedEmoji : "");
 
             excelData.push([i, text]);
@@ -183,4 +188,4 @@ async function generateReviews() {
 }
 </script>
 </body>
-</html> 
+</html>
